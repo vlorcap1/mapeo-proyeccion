@@ -14,6 +14,19 @@ export interface Contenido {
   archivo?: string;
 }
 
+/** Un tramo de la línea de tiempo de una superficie. Su id es también la clave del archivo en IndexedDB. */
+export interface Clip {
+  id: string;
+  contenido: Contenido;
+  /** Segundos que dura el clip. */
+  duracion: number;
+  /** Segundos de fundido desde negro al empezar (0 = corte directo). */
+  fundido: number;
+}
+
+/** Qué hace la superficie cuando su línea de tiempo termina antes que la presentación. */
+export type AlTerminar = "repetir" | "mantener" | "apagar";
+
 export interface Superficie {
   id: string;
   nombre: string;
@@ -21,9 +34,19 @@ export interface Superficie {
   esquinas: [Punto, Punto, Punto, Punto];
   /** Forma libre que recorta la luz. null = sin recorte (se ve todo el cuadrilátero). */
   recorte: Punto[] | null;
-  contenido: Contenido;
+  /** Línea de tiempo: siempre al menos un clip. */
+  clips: Clip[];
+  alTerminar: AlTerminar;
   visible: boolean;
   opacidad: number;
 }
 
+export interface Escena {
+  superficies: Superficie[];
+  /** Al terminar la superficie más larga, todas vuelven a partir juntas. */
+  repetir: boolean;
+}
+
 export type Herramienta = "esquinas" | "recorte";
+
+export type EstadoReproduccion = "detenido" | "reproduciendo" | "pausado";

@@ -47,7 +47,7 @@ html, body, #root { margin: 0; height: 100%; overflow: hidden; background: #000;
 
 /* Panel */
 .panel {
-  position: absolute; top: 16px; left: 16px; bottom: 16px; width: 300px; overflow-y: auto;
+  position: absolute; top: 16px; left: 16px; bottom: 16px; z-index: 3; width: 300px; overflow-y: auto;
   background: var(--fondo-panel); border: 1px solid var(--borde); border-radius: 14px;
   color: var(--texto); font-size: 13px; padding: 14px; display: flex; flex-direction: column; gap: 16px;
   backdrop-filter: blur(8px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
@@ -112,4 +112,68 @@ kbd { font-family: inherit; font-size: 10.5px; background: #1b202b; border: 1px 
 
 @media (max-width: 640px) {
   .panel { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 55vh; }
+}
+
+button:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+select.campo { padding: 6px 8px; }
+.fila select.campo { flex: 1; min-width: 0; }
+
+/* Lista de clips de la superficie */
+.clips { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; counter-reset: clip; }
+.clips li { display: flex; align-items: center; gap: 7px; padding: 5px 4px 5px 8px; border-radius: 8px; cursor: pointer;
+  border: 1px solid transparent; color: var(--suave); }
+.clips li:hover { background: #1b202b; }
+.clips li.activo { background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.4); color: #fff; }
+.clips .nombre { flex: 1; }
+.clips .punto { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.clips .duracion { font-variant-numeric: tabular-nums; font-size: 12px; }
+.clips .mini { display: flex; }
+.clips .mini button.icono { padding: 3px; }
+.dos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.columna { display: flex; flex-direction: column; gap: 4px; color: var(--suave); font-size: 12px; }
+.columna .campo { width: 100%; }
+
+/* Línea de tiempo */
+.linea-tiempo {
+  --ancho-nombre: 120px;
+  position: absolute; right: 16px; bottom: 16px; left: 16px; max-height: 40vh; overflow-y: auto;
+  background: var(--fondo-panel); border: 1px solid var(--borde); border-radius: 14px; padding: 10px 14px 12px;
+  color: var(--texto); font-size: 12px; backdrop-filter: blur(8px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.linea-tiempo.con-panel { left: 332px; }
+.controles { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+button.icono.grande { padding: 7px; color: var(--texto); }
+.reloj { font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 600; margin: 0 8px; color: #fff; }
+.reloj span { color: var(--suave); font-weight: 400; }
+button.alternar { padding: 5px 10px; color: var(--suave); }
+button.alternar.activo { color: var(--acento); border-color: rgba(56, 189, 248, 0.5); background: rgba(56, 189, 248, 0.1); }
+button.presentar { margin-left: auto; }
+
+.pistas { position: relative; display: flex; flex-direction: column; gap: 4px; }
+.fila-pista { display: grid; grid-template-columns: var(--ancho-nombre) 1fr; align-items: center; }
+.nombre-pista { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--suave); padding-right: 10px; }
+.fila-pista.seleccionada .nombre-pista { color: #fff; font-weight: 600; }
+.fila-pista.oculta { opacity: 0.4; }
+.pista { position: relative; height: 26px; background: #11151d; border-radius: 6px; cursor: text; }
+.regla .pista { height: 16px; background: transparent; cursor: pointer; }
+.marca-regla { position: absolute; top: 0; transform: translateX(-50%); color: var(--suave); font-size: 10px; pointer-events: none; }
+.marca-regla:first-child { transform: none; }
+.bloque { position: absolute; top: 2px; bottom: 2px; padding: 0 6px; border-radius: 5px; justify-content: flex-start;
+  border: 1px solid rgba(0, 0, 0, 0.35); color: #fff; overflow: hidden; font-size: 11px; font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
+.bloque:hover { filter: brightness(1.15); background-blend-mode: normal; border-color: rgba(0, 0, 0, 0.35); }
+.bloque.activo { box-shadow: 0 0 0 2px #fff; z-index: 1; }
+.texto-bloque { position: relative; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+.cuña { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, rgba(0, 0, 0, 0.65), transparent); }
+.fin { position: absolute; top: 2px; bottom: 2px; display: flex; align-items: center; padding-left: 8px; border-radius: 5px;
+  font-size: 10.5px; color: var(--suave); pointer-events: none; overflow: hidden; white-space: nowrap; }
+.fin-repetir { background: repeating-linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0 6px, transparent 6px 12px); }
+.fin-mantener { background: rgba(148, 163, 184, 0.12); }
+.fin-apagar { background: repeating-linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0 6px, transparent 6px 12px); }
+.cabezal { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #f43f5e; pointer-events: none; z-index: 2;
+  box-shadow: 0 0 6px rgba(244, 63, 94, 0.7); }
+
+@media (max-width: 640px) {
+  .linea-tiempo, .linea-tiempo.con-panel { left: 8px; right: 8px; bottom: auto; top: 8px; max-height: 35vh; }
+  .linea-tiempo { --ancho-nombre: 80px; }
 }

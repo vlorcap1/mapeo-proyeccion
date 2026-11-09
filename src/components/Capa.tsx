@@ -1,17 +1,29 @@
+import { useEffect, useRef } from "react";
 import { matriz3d } from "../homografia";
-import type { Superficie } from "../tipos";
+import type { Clip, Superficie } from "../tipos";
 
 // Tamaño interno del lienzo: el contenido se dibuja a esta resolución y luego se deforma hacia las esquinas.
 export const ANCHO = 1280;
 export const ALTO = 720;
 
+/** libre: edición sin reproducir (los videos corren en bucle). En reproducción/pausa los videos siguen al reloj. */
+export type ModoVideo = "libre" | "reproduciendo" | "pausado";
+
 interface Props {
   superficie: Superficie;
+  clip: Clip;
   url?: string;
   pantalla: { w: number; h: number };
+  /** Multiplica el brillo de la superficie (fundidos). */
+  fundido: number;
+  /** Cambia cuando el clip vuelve a empezar: reinicia videos. */
+  vuelta: string;
+  modo: ModoVideo;
+  /** Segundos dentro del clip, para sincronizar videos al pausar o saltar. */
+  local: number;
 }
 
-export function Capa({ superficie: s, url, pantalla }: Props) {
+export function Capa({ superficie: s, clip, url, pantalla, fundido, vuelta, modo, local }: Props) {
   const px = (p: { x: number; y: number }) => ({ x: p.x * pantalla.w, y: p.y * pantalla.h });
   const recorte =
     s.recorte && s.recorte.length >= 3
@@ -19,16 +31,24 @@ export function Capa({ superficie: s, url, pantalla }: Props) {
       : undefined;
 
   return (
-    <div className="capa" style={{ clipPath: recorte, opacity: s.opacidad }}>
+    <div className="capa" style={{ clipPath: recorte, opacity: s.opacidad * fundido }}>
       <div className="lienzo" style={{ width: ANCHO, height: ALTO, transform: matriz3d(ANCHO, ALTO, s.esquinas.map(px)) }}>
-        <Contenido superficie={s} url={url} />
+        <Contenido key={`${clip.id}-${vuelta}`} nombre={s.nombre} clip={clip} url={url} modo={modo} local={local} />
       </div>
     </div>
   );
 }
 
-function Contenido({ superficie: s, url }: { superficie: Superficie; url?: string }) {
-  const { tipo, color, texto } = s.contenido;
+interface PropsContenido {
+  nombre: string;
+  clip: Clip;
+  url?: string;
+  modo: ModoVideo;
+  local: number;
+}
+
+function Contenido({ nombre, clip, url, modo, local }: PropsContenido) {
+  const { tipo, color, texto } = clip.contenido;
   switch (tipo) {
     case "color":
       return <div className="relleno" style={{ background: color }} />;
@@ -43,10 +63,28 @@ function Contenido({ superficie: s, url }: { superficie: Superficie; url?: strin
     case "imagen":
       return url ? <img className="relleno medio" src={url} alt="" draggable={false} /> : <SinArchivo />;
     case "video":
-      return url ? <video className="relleno medio" src={url} autoPlay loop muted playsInline /> : <SinArchivo />;
+      return url ? <VideoSincronizado url={url} modo={modo} local={local} /> : <SinArchivo />;
     default:
-      return <Patron nombre={s.nombre} color={color} />;
+      return <Patron nombre={nombre} color={color} />;
   }
+}
+
+function VideoSincronizado({ url, modo, local }: { url: string; modo: ModoVideo; local: number }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    if (modo === "pausado") v.pause();
+    else v.play().catch(() => {});
+  }, [modo]);
+  // En pausa el reloj manda: al mover el cabezal, el video salta al cuadro correspondiente
+  useEffect(() => {
+    const v = ref.current;
+    if (!v || modo !== "pausado" || !v.duration) return;
+    const objetivo = local % v.duration;
+    if (Math.abs(v.currentTime - objetivo) > 0.05) v.currentTime = objetivo;
+  }, [modo, local]);
+  return <video ref={ref} className="relleno medio" src={url} autoPlay={modo !== "pausado"} loop muted playsInline />;
 }
 
 function SinArchivo() {

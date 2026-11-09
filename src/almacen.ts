@@ -1,18 +1,30 @@
-import type { Superficie } from "./tipos";
+import type { Escena, Superficie } from "./tipos";
 
-// La escena se guarda en este navegador: posiciones en localStorage, imágenes y videos en IndexedDB.
-const CLAVE = "mapeo:escena:v1";
+// La escena se guarda en este navegador: posiciones y líneas de tiempo en localStorage, imágenes y videos en IndexedDB.
+const CLAVE = "mapeo:escena:v2";
+const CLAVE_V1 = "mapeo:escena:v1";
 
-export function cargarEscena(): Superficie[] | null {
+type SuperficieV1 = Omit<Superficie, "clips" | "alTerminar"> & { contenido: Superficie["clips"][number]["contenido"] };
+
+export function cargarEscena(): Escena | null {
   try {
     const texto = localStorage.getItem(CLAVE);
-    return texto ? (JSON.parse(texto) as Superficie[]) : null;
+    if (texto) return JSON.parse(texto) as Escena;
+    // Versión anterior (un contenido por superficie): pasa a ser el primer clip, con el mismo id para conservar su archivo
+    const v1 = localStorage.getItem(CLAVE_V1);
+    if (!v1) return null;
+    const superficies = (JSON.parse(v1) as SuperficieV1[]).map(({ contenido, ...s }) => ({
+      ...s,
+      clips: [{ id: s.id, contenido, duracion: 10, fundido: 0 }],
+      alTerminar: "repetir" as const,
+    }));
+    return { superficies, repetir: true };
   } catch {
     return null;
   }
 }
 
-export function guardarEscena(escena: Superficie[]) {
+export function guardarEscena(escena: Escena) {
   try {
     localStorage.setItem(CLAVE, JSON.stringify(escena));
   } catch {
